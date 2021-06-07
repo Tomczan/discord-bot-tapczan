@@ -60,3 +60,14 @@ class TmApi:
             self.ticket = response_level2['accessToken']
             self.refresh_ticket = response_level2['refreshToken']
             return response_level2
+
+    def get_new_refresh_ticket(self):
+        url = "https://prod.trackmania.core.nadeo.online/v2/authentication/token/refresh"
+        headers = {
+            'Authorization': 'nadeo_v1 t=' + self.refresh_ticket
+        }
+        try:
+            refresh_ticket = requests.post(url, headers=headers)
+            return refresh_ticket.json()
+        except:
+            return 'Could not connect with api, try to use "get_ticket" before.'
