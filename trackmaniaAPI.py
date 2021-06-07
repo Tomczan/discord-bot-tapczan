@@ -2,6 +2,7 @@ import requests
 import base64
 import http.client
 import json
+from decouple import config
 
 
 class TmApi:
@@ -15,7 +16,7 @@ class TmApi:
         headers = {
             'Content-Type': 'application/json',
             # 'Basic base64.b64encode(b'email:password').decode()',
-            'Authorization': 'Basic ' + config('BASE64_AUTH'),
+            'Authorization': 'Basic dG9tYXN6ZGphbmdvYXBwQGdtYWlsLmNvbTpUcmFja21hbmlhMTIz',
             # Trackmania ID
             'Ubi-AppId': '86263886-327a-4328-ac69-527f0d20a237'
         }
@@ -52,8 +53,8 @@ class TmApi:
     def get_tickets(self):
         try:
             response_level0 = self.level0()
-            response_level1 = self.level1(self, response_level0['ticket'])
-            response_level2 = self.level2(self, response_level1['accessToken'])
+            response_level1 = self.level1(response_level0['ticket'])
+            response_level2 = self.level2(response_level1['accessToken'])
         except:
             return "Couldnt get a response from apis"
         if response_level2:
@@ -71,3 +72,14 @@ class TmApi:
             return refresh_ticket.json()
         except:
             return 'Could not connect with api, try to use "get_ticket" before.'
+
+    def get_player_info(self, player_id):
+        url = "https://matchmaking.trackmania.nadeo.club/api/matchmaking/2/leaderboard/players?players[]=" + player_id
+        headers = {
+            'Authorization': 'nadeo_v1 t=' + self.ticket
+        }
+        try:
+            player_info = requests.get(url, headers=headers)
+            return player_info.json()
+        except:
+            return 'Could not connect with api and get player info.'

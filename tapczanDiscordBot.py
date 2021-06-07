@@ -161,18 +161,31 @@ async def check_rank(ctx, id):
 
 @bot.command()
 async def set_nick_and_roles(ctx):
-    guild = bot.get_guild(config('GUILD_ID'))
+    guild = bot.get_guild(int(config('GUILD_ID')))
     response = get_users_from_oauth2_api()
     response = json.loads(response.text)
 
+    api = trackmaniaAPI.TmApi()
+    api.get_tickets()
+    print(type(config('GUILD_ID')))
+    print(api.ticket)
+
     if response:
         for user in response:
-            if user['linked_discord'] == config('SKIP_ID'):
+            if user['linked_discord'] == int(config('SKIP_ID')):
                 print('I was here', user['linked_discord'])
                 continue
             member = guild.get_member(user['linked_discord'])
             if member:
-                await member.edit(nick=str(user['display_name']))
+                try:
+                    print(user['account_id'])
+                    player_info = api.get_player_info(user['account_id'])
+                    print(player_info)
+                    score = player_info['results'][0]['score']
+                    print(score)
+                except:
+                    score = 0
+                await member.edit(nick=str(user['display_name']) + ' - ' + str(score))
 
 
 bot.run(config('BOT_SECRET_KEY'))
