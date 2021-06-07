@@ -1,5 +1,3 @@
-# This example requires the 'members' privileged intents
-
 import discord
 from discord.ext import commands
 import random
@@ -19,13 +17,6 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='!',
                    description=description, intents=intents)
-
-# global variables
-variable = 'test'
-boolean = True
-stop = ''
-level2Token = ''
-level2RefreshToken = ''
 
 # URLs
 
