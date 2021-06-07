@@ -16,7 +16,7 @@ class TmApi:
         headers = {
             'Content-Type': 'application/json',
             # 'Basic base64.b64encode(b'email:password').decode()',
-            'Authorization': 'Basic dG9tYXN6ZGphbmdvYXBwQGdtYWlsLmNvbTpUcmFja21hbmlhMTIz',
+            'Authorization': 'Basic ' + config('BASE64_AUTH'),
             # Trackmania ID
             'Ubi-AppId': '86263886-327a-4328-ac69-527f0d20a237'
         }
