@@ -22,6 +22,8 @@ bot = commands.Bot(command_prefix='!',
 
 url_matchmaking = "https://matchmaking.trackmania.nadeo.club/api/matchmaking/2/leaderboard/players?players[]="
 
+bot.loop_active = True
+
 
 def get_users_from_oauth2_api():
     url = config('OAUTH2_API_URL')
@@ -35,16 +37,9 @@ def get_users_from_oauth2_api():
 
 @bot.command()
 async def get_token(ctx):
-    global level2Token
-    global level2RefreshToken
-    uplay_token = trackmaniaAPI.level0_uplay_token()
-    nadeo_API_access_token = trackmaniaAPI.level1_nadeo_token(uplay_token)
-    nadeo_token = trackmaniaAPI.level2_nadeo_token(
-        nadeo_API_access_token['accessToken'])
-    level2Token = nadeo_token['accessToken']
-    level2RefreshToken = nadeo_token['refreshToken']
-    if bool(level2Token):
-        await ctx.send('Access token granted')
+    get_token = trackmaniaAPI.TmApi()
+    tickets = get_token.get_tickets()
+    await ctx.send(tickets)
 
 
 @bot.command()
@@ -85,27 +80,13 @@ async def test5sec(ctx, content='bede spamowac to, co 5 sekund'):
 
 
 @bot.command()
-async def stop_spam(ctx, message):
-    global stop
-    stop = message
+async def start_loop(ctx):
+    bot.loop_active = True
 
 
 @bot.command()
-async def print_global_variable(ctx):
-    global variable
-    await ctx.send(variable)
-
-
-@bot.command()
-async def print_token(ctx):
-    global level2Token
-    await ctx.send(level2Token)
-
-
-@bot.command()
-async def print_refresh_token(ctx):
-    global level2RefreshToken
-    await ctx.send(level2RefreshToken)
+async def stop_loop(ctx):
+    bot.loop_active = False
 
 
 @bot.command()
@@ -152,31 +133,50 @@ async def check_rank(ctx, id):
 
 @bot.command()
 async def set_nick_and_roles(ctx):
-    guild = bot.get_guild(int(config('GUILD_ID')))
-    response = get_users_from_oauth2_api()
-    response = json.loads(response.text)
+    guild = bot.get_guild(ctx.message.guild.id)
 
     api = trackmaniaAPI.TmApi()
     api.get_tickets()
+
     print(type(config('GUILD_ID')))
     print(api.ticket)
 
-    if response:
-        for user in response:
-            if user['linked_discord'] == int(config('SKIP_ID')):
-                print('I was here', user['linked_discord'])
-                continue
-            member = guild.get_member(user['linked_discord'])
-            if member:
-                try:
-                    print(user['account_id'])
-                    player_info = api.get_player_info(user['account_id'])
-                    print(player_info)
-                    score = player_info['results'][0]['score']
-                    print(score)
-                except:
-                    score = 0
-                await member.edit(nick=str(user['display_name']) + ' - ' + str(score))
+    while bot.loop_active:
+        if not(api.ticket):
+            api.get_tickets()
+        else:
+            api.get_new_refresh_ticket()
+
+        response_oauth2 = get_users_from_oauth2_api()
+        response_oauth2 = json.loads(response_oauth2.text)
+        if response_oauth2:
+            for user in response_oauth2:
+                if user['linked_discord'] == int(config('SKIP_ID')):
+                    print('I was here', user['linked_discord'])
+                    continue
+                member = guild.get_member(user['linked_discord'])
+                if member:
+                    try:
+                        print(user['account_id'])
+                        player_info = api.get_player_info(user['account_id'])
+                        print(player_info)
+                        score = player_info['results'][0]['score']
+                        print(score)
+                    except:
+                        score = 0
+                    if score > 3000:
+                        await member.add_roles(guild.get_role(851579810874261587))
+                    else:
+                        await member.add_roles(guild.get_role(851579865579651092))
+                    await member.edit(nick=str(user['display_name']) + ' - ' + str(score))
+        await ctx.send("Ill wait 30sec")
+        await asyncio.sleep(30)
+    await ctx.send("While loop stopped")
+
+
+@bot.command()
+async def get_guild_token(ctx):
+    await ctx.send(ctx.message.guild.id)
 
 
 bot.run(config('BOT_SECRET_KEY'))

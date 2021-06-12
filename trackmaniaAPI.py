@@ -69,9 +69,15 @@ class TmApi:
         }
         try:
             refresh_ticket = requests.post(url, headers=headers)
-            return refresh_ticket.json()
+            print("Refresh ticket: ", type(refresh_ticket))
+            refresh_ticket = refresh_ticket.json()
+            print("Refresh ticket: ", type(refresh_ticket))
         except:
             return 'Could not connect with api, try to use "get_ticket" before.'
+        if refresh_ticket:
+            self.ticket = refresh_ticket['accessToken']
+            self.refresh_ticket = refresh_ticket['refreshToken']
+            return refresh_ticket
 
     def get_player_info(self, player_id):
         url = "https://matchmaking.trackmania.nadeo.club/api/matchmaking/2/leaderboard/players?players[]=" + player_id
