@@ -151,9 +151,9 @@ async def set_nick_and_roles(ctx):
         response_oauth2 = json.loads(response_oauth2.text)
         if response_oauth2:
             for user in response_oauth2:
-                if user['linked_discord'] == int(config('SKIP_ID')):
+                """if user['linked_discord'] == 2:
                     print('I was here', user['linked_discord'])
-                    continue
+                    continue"""
                 member = guild.get_member(user['linked_discord'])
                 if member:
                     try:
@@ -164,11 +164,56 @@ async def set_nick_and_roles(ctx):
                         print(score)
                     except:
                         score = 0
-                    if score > 3000:
-                        await member.add_roles(guild.get_role(851579810874261587))
+                    try:
+                        await member.edit(nick=str(user['display_name']) + ' - ' + str(score))
+                    except discord.errors.Forbidden:
+                        continue
+                    # TOP 100
+                    if player_info['results'][0]['rank'] >= 100:
+                        await member.add_roles(guild.get_role(851589599871762433))
+                    # Bronze 1
+                    elif 1 <= score <= 299:
+                        await member.add_roles(guild.get_role(843466461547593748))
+                    # Bronze 2
+                    elif 300 <= score <= 599:
+                        await member.add_roles(guild.get_role(843466786489499659))
+                    # Bronze 3
+                    elif 600 <= score <= 999:
+                        await member.add_roles(guild.get_role(843466934623928330))
+                    # Silver 1
+                    elif 1000 <= score <= 1299:
+                        await member.add_roles(guild.get_role(843466667308089344))
+                    # Silver 2
+                    elif 1300 <= score <= 1599:
+                        await member.add_roles(guild.get_role(843467019575885824))
+                    # Silver 3
+                    elif 1600 <= score <= 1999:
+                        await member.add_roles(guild.get_role(843467061564145685))
+                    # Gold 1
+                    elif 2000 <= score <= 2299:
+                        await member.add_roles(guild.get_role(843467109229002773))
+                    # Gold 2
+                    elif 2300 <= score <= 2599:
+                        await member.add_roles(guild.get_role(843467151277031426))
+                    # Gold 3
+                    elif 2600 <= score <= 2999:
+                        await member.add_roles(guild.get_role(843467389282287648))
+                    # Master 1
+                    elif 3000 <= score <= 329:
+                        await member.add_roles(guild.get_role(851583674196819968))
+                    # Master 2
+                    elif 3300 <= score <= 3599:
+                        await member.add_roles(guild.get_role(851583682132181022))
+                    # Master 3
+                    elif 3600 <= score <= 3999:
+                        await member.add_roles(guild.get_role(851583859559628801))
+                    # Trackmaster
+                    elif 4000 <= score:
+                        await member.add_roles(guild.get_role(843467443242270740))
                     else:
-                        await member.add_roles(guild.get_role(851579865579651092))
-                    await member.edit(nick=str(user['display_name']) + ' - ' + str(score))
+                        # Unranked
+                        await member.add_roles(guild.get_role(51584115665141780))
+
         await ctx.send("Ill wait 30sec")
         await asyncio.sleep(30)
     await ctx.send("While loop stopped")
