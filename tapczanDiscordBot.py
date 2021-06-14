@@ -138,7 +138,6 @@ async def set_nick_and_roles(ctx):
     api = trackmaniaAPI.TmApi()
     api.get_tickets()
 
-    print(type(config('GUILD_ID')))
     print(api.ticket)
 
     while bot.loop_active:
@@ -151,9 +150,6 @@ async def set_nick_and_roles(ctx):
         response_oauth2 = json.loads(response_oauth2.text)
         if response_oauth2:
             for user in response_oauth2:
-                """if user['linked_discord'] == 2:
-                    print('I was here', user['linked_discord'])
-                    continue"""
                 member = guild.get_member(user['linked_discord'])
                 if member:
                     try:
@@ -161,18 +157,22 @@ async def set_nick_and_roles(ctx):
                         player_info = api.get_player_info(user['account_id'])
                         print(player_info)
                         score = player_info['results'][0]['score']
-                        print(score)
+                        print("Score:", score)
+                        rank = player_info['results'][0]['rank']
+                        print("Rank:", rank)
                     except:
                         score = 0
+                        rank = 101
                     try:
                         await member.edit(nick=str(user['display_name']) + ' - ' + str(score))
                     except discord.errors.Forbidden:
                         continue
+
                     # TOP 100
-                    if player_info['results'][0]['rank'] >= 100:
+                    if rank <= 100:
                         await member.add_roles(guild.get_role(851589599871762433))
                     # Bronze 1
-                    elif 1 <= score <= 299:
+                    if 1 <= score <= 299:
                         await member.add_roles(guild.get_role(843466461547593748))
                     # Bronze 2
                     elif 300 <= score <= 599:
@@ -199,7 +199,7 @@ async def set_nick_and_roles(ctx):
                     elif 2600 <= score <= 2999:
                         await member.add_roles(guild.get_role(843467389282287648))
                     # Master 1
-                    elif 3000 <= score <= 329:
+                    elif 3000 <= score <= 3299:
                         await member.add_roles(guild.get_role(851583674196819968))
                     # Master 2
                     elif 3300 <= score <= 3599:
@@ -212,11 +212,10 @@ async def set_nick_and_roles(ctx):
                         await member.add_roles(guild.get_role(843467443242270740))
                     else:
                         # Unranked
-                        await member.add_roles(guild.get_role(51584115665141780))
+                        await member.add_roles(guild.get_role(851584115665141780))
 
-        await ctx.send("Ill wait 30sec")
         await asyncio.sleep(30)
-    await ctx.send("While loop stopped")
+    await ctx.send("The command has been stopped.")
 
 
 @bot.command()
