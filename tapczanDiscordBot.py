@@ -35,6 +35,24 @@ def get_users_from_oauth2_api():
     return response
 
 
+async def remove_old_roles(guild, member, id):
+    roles_id_list = [851584115665141780, 843466461547593748, 843466786489499659,
+                     843466934623928330, 843466667308089344, 843467019575885824,
+                     843467061564145685, 843467109229002773, 843467151277031426,
+                     843467389282287648, 851583674196819968, 851583682132181022,
+                     851583859559628801, 843467443242270740]
+    roles_id_list.remove(id)
+    member_roles = member.roles
+    member_roles_id = []
+    for role in member_roles:
+        member_roles_id.append(role.id)
+
+    roles_to_delete = set(member_roles_id) & set(roles_id_list)
+
+    for role_id in roles_to_delete:
+        await member.remove_roles(guild.get_role(role_id))
+
+
 @bot.command()
 async def get_token(ctx):
     get_token = trackmaniaAPI.TmApi()
@@ -171,50 +189,69 @@ async def set_nick_and_roles(ctx):
                     # TOP 100
                     if rank <= 100:
                         await member.add_roles(guild.get_role(851589599871762433))
+                    else:
+                        try:
+                            await member.remove_roles(guild.get_role(851589599871762433))
+                        except:
+                            print("Member was not in top 100")
                     # Bronze 1
                     if 1 <= score <= 299:
+                        await remove_old_roles(guild, member, 843466461547593748)
                         await member.add_roles(guild.get_role(843466461547593748))
                     # Bronze 2
                     elif 300 <= score <= 599:
+                        await remove_old_roles(guild, member, 843466786489499659)
                         await member.add_roles(guild.get_role(843466786489499659))
                     # Bronze 3
                     elif 600 <= score <= 999:
+                        await remove_old_roles(guild, member, 843466934623928330)
                         await member.add_roles(guild.get_role(843466934623928330))
                     # Silver 1
                     elif 1000 <= score <= 1299:
+                        await remove_old_roles(guild, member, 843466667308089344)
                         await member.add_roles(guild.get_role(843466667308089344))
                     # Silver 2
                     elif 1300 <= score <= 1599:
+                        await remove_old_roles(guild, member, 843467019575885824)
                         await member.add_roles(guild.get_role(843467019575885824))
                     # Silver 3
                     elif 1600 <= score <= 1999:
+                        await remove_old_roles(guild, member, 843467061564145685)
                         await member.add_roles(guild.get_role(843467061564145685))
                     # Gold 1
                     elif 2000 <= score <= 2299:
+                        await remove_old_roles(guild, member, 843467109229002773)
                         await member.add_roles(guild.get_role(843467109229002773))
                     # Gold 2
                     elif 2300 <= score <= 2599:
+                        await remove_old_roles(guild, member, 843467151277031426)
                         await member.add_roles(guild.get_role(843467151277031426))
                     # Gold 3
                     elif 2600 <= score <= 2999:
+                        await remove_old_roles(guild, member, 843467389282287648)
                         await member.add_roles(guild.get_role(843467389282287648))
                     # Master 1
                     elif 3000 <= score <= 3299:
+                        await remove_old_roles(guild, member, 851583674196819968)
                         await member.add_roles(guild.get_role(851583674196819968))
                     # Master 2
                     elif 3300 <= score <= 3599:
+                        await remove_old_roles(guild, member, 851583682132181022)
                         await member.add_roles(guild.get_role(851583682132181022))
                     # Master 3
                     elif 3600 <= score <= 3999:
+                        await remove_old_roles(guild, member, 851583859559628801)
                         await member.add_roles(guild.get_role(851583859559628801))
                     # Trackmaster
                     elif 4000 <= score:
+                        await remove_old_roles(guild, member, 843467443242270740)
                         await member.add_roles(guild.get_role(843467443242270740))
                     else:
                         # Unranked
+                        await remove_old_roles(guild, member, 851584115665141780)
                         await member.add_roles(guild.get_role(851584115665141780))
 
-        await asyncio.sleep(30)
+        await asyncio.sleep(300)
     await ctx.send("The command has been stopped.")
 
 
