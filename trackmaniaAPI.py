@@ -66,7 +66,7 @@ class TmApi:
         url = "https://prod.trackmania.core.nadeo.online/v2/authentication/token/refresh"
         headers = {
             'Authorization': 'nadeo_v1 t=' + self.refresh_ticket
-        }
+        }   
         try:
             refresh_ticket = requests.post(url, headers=headers)
             print("Refresh ticket: ", type(refresh_ticket))
@@ -87,5 +87,18 @@ class TmApi:
         try:
             player_info = requests.get(url, headers=headers)
             return player_info.json()
+        except:
+            return 'Could not connect with api and get player info.'
+            
+
+    def get_players_info(self, request_arg):
+        url = "https://matchmaking.trackmania.nadeo.club/api/matchmaking/2/leaderboard/players?" + request_arg
+        headers = {
+            'Authorization': 'nadeo_v1 t=' + self.ticket
+        }
+        try:
+            players_info = requests.get(url, headers=headers)
+            print(type(players_info.json()))
+            return players_info.json()
         except:
             return 'Could not connect with api and get player info.'

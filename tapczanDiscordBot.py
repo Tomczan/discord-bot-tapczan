@@ -9,6 +9,11 @@ import http.client
 import json
 import trackmaniaAPI
 from decouple import config
+from webserver import keep_alive
+import math
+from collections import defaultdict
+
+MAX_IDS_PER_REQUEST = 150
 
 description = '''Trackmania-oauth2 bot discord.'''
 
@@ -24,33 +29,7 @@ url_matchmaking = "https://matchmaking.trackmania.nadeo.club/api/matchmaking/2/l
 
 bot.loop_active = True
 
-
-def get_users_from_oauth2_api():
-    url = config('OAUTH2_API_URL')
-
-    payload = {}
-    headers = {}
-
-    response = requests.request("GET", url, headers=headers, data=payload)
-    return response
-
-
-async def remove_old_roles(guild, member, id):
-    roles_id_list = [851584115665141780, 843466461547593748, 843466786489499659,
-                     843466934623928330, 843466667308089344, 843467019575885824,
-                     843467061564145685, 843467109229002773, 843467151277031426,
-                     843467389282287648, 851583674196819968, 851583682132181022,
-                     851583859559628801, 843467443242270740]
-    roles_id_list.remove(id)
-    member_roles = member.roles
-    member_roles_id = []
-    for role in member_roles:
-        member_roles_id.append(role.id)
-
-    roles_to_delete = set(member_roles_id) & set(roles_id_list)
-
-    for role_id in roles_to_delete:
-        await member.remove_roles(guild.get_role(role_id))
+OAUTH2_API_URL = os.environ['OAUTH2_API_URL']
 
 
 @bot.command()
@@ -84,17 +63,7 @@ async def on_ready():
     print(bot.user.name)
     print(bot.user.id)
     print('------')
-
-
-@bot.command()
-async def test5sec(ctx, content='bede spamowac to, co 5 sekund'):
-    global stop
-    stop = ''
-    while True:
-        await ctx.send(content)
-        await asyncio.sleep(5)
-        if bool(stop):
-            break
+    await nick_and_roles()
 
 
 @bot.command()
@@ -114,7 +83,7 @@ async def change_nickname(ctx, member: discord.Member, nickname):
 
 @bot.command()
 async def get_user(ctx, user_id):
-    guild = bot.get_guild(config('GUILD_ID'))
+    guild = bot.get_guild(ctx.message.guild.id)
     user = bot.get_user(int(user_id))
     member = guild.get_member(int(user_id))
     await ctx.send(user.name)
@@ -149,14 +118,38 @@ async def check_rank(ctx, id):
     await ctx.send(context)
 
 
+async def remove_old_roles(guild, member, id):
+    roles_id_list = [851584115665141780, 843466461547593748, 843466786489499659,
+                     843466934623928330, 843466667308089344, 843467019575885824,
+                     843467061564145685, 843467109229002773, 843467151277031426,
+                     843467389282287648, 851583674196819968, 851583682132181022,
+                     851583859559628801, 843467443242270740]
+    roles_id_list.remove(id)
+    member_roles = member.roles
+    member_roles_id = []
+    for role in member_roles:
+        member_roles_id.append(role.id)
+
+    roles_to_delete = set(member_roles_id) & set(roles_id_list)
+
+    for role_id in roles_to_delete:
+        await member.remove_roles(guild.get_role(role_id))
+
+
 @bot.command()
 async def set_nick_and_roles(ctx):
-    guild = bot.get_guild(ctx.message.guild.id)
+    await nick_and_roles()
+
+
+async def nick_and_roles():
+    guild_id = int(os.environ['GUILD_ID'])
+    guild = bot.get_guild(guild_id)
 
     api = trackmaniaAPI.TmApi()
     api.get_tickets()
 
-    print(api.ticket)
+    channel = bot.get_channel(854002990112571422)
+    await channel.send("""Logged in, starting to work""")
 
     while bot.loop_active:
         if not(api.ticket):
@@ -164,37 +157,38 @@ async def set_nick_and_roles(ctx):
         else:
             api.get_new_refresh_ticket()
 
-        response_oauth2 = get_users_from_oauth2_api()
-        response_oauth2 = json.loads(response_oauth2.text)
-        if response_oauth2:
-            for user in response_oauth2:
-                member = guild.get_member(user['linked_discord'])
-                if member:
-                    try:
-                        print(user['account_id'])
-                        player_info = api.get_player_info(user['account_id'])
-                        print(player_info)
-                        score = player_info['results'][0]['score']
-                        print("Score:", score)
-                        rank = player_info['results'][0]['rank']
-                        print("Rank:", rank)
-                    except:
-                        score = 0
-                        rank = 101
-                    try:
-                        await member.edit(nick=str(user['display_name']) + ' - ' + str(score))
-                    except discord.errors.Forbidden:
-                        continue
+        mm_api_dict = get_users_from_oauth2_api()
+        mm_api_dict = json.loads(mm_api_dict.text)
+        trackmania_api_dict = do_requests(mm_api_dict, api)
+        final_dict = merge_dicts_from_apis(trackmania_api_dict, mm_api_dict)
 
-                    # TOP 100
-                    if rank <= 100:
-                        await member.add_roles(guild.get_role(851589599871762433))
-                    else:
-                        try:
-                            await member.remove_roles(guild.get_role(851589599871762433))
-                        except:
-                            print("Member was not in top 100")
-                    # Bronze 1
+        for user in final_dict:
+            member = guild.get_member(user['linked_discord'])
+            if member:
+                try:
+                    print(user['account_id'])
+                    score = user['score']
+                    print("Score:", score)
+                    rank = user['rank']
+                    print("Rank:", rank)
+                except:
+                    score = 0
+                    rank = 101
+                try:
+                    await member.edit(nick=str(user['display_name']) + ' - ' + str(score))
+                except discord.errors.Forbidden:
+                    continue
+
+                # TOP 100
+                if rank <= 100:
+                    await member.add_roles(guild.get_role(851589599871762433))
+                else:
+                    try:
+                        await member.remove_roles(guild.get_role(851589599871762433))
+                    except:
+                        print("Member was not in top 100")
+                # Bronze 1
+                try:
                     if 1 <= score <= 299:
                         await remove_old_roles(guild, member, 843466461547593748)
                         await member.add_roles(guild.get_role(843466461547593748))
@@ -250,14 +244,67 @@ async def set_nick_and_roles(ctx):
                         # Unranked
                         await remove_old_roles(guild, member, 851584115665141780)
                         await member.add_roles(guild.get_role(851584115665141780))
-
+                except:
+                    print("Cannot add role")
         await asyncio.sleep(300)
-    await ctx.send("The command has been stopped.")
+    await channel.send("The command has been stopped.")
+
+
+def get_users_from_oauth2_api():
+    url = OAUTH2_API_URL
+
+    payload = {}
+    headers = {}
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+    return response
+
+
+def do_requests(data, api):
+    requests_list = do_lists_max_150_ids_per(data)
+    list_of_api_elements = []
+    print(type(list_of_api_elements))
+    for list_of_ids in requests_list:
+        request_arg = ''
+        for player_id in list_of_ids:
+            request_arg += 'players[]=' + str(player_id) + '&'
+        request_dict = api.get_players_info(request_arg)
+        list_of_api_elements += request_dict['results']
+    return list_of_api_elements
+
+
+def do_lists_max_150_ids_per(data):
+    requests_list = how_many_requests_list(data)
+    i = 0
+    for element in data:
+        if len(requests_list[i]) < MAX_IDS_PER_REQUEST:
+            requests_list[i].append(element['account_id'])
+        else:
+            i += 1
+            requests_list[i].append(element['account_id'])
+    return requests_list
+
+
+def how_many_requests_list(data):
+    size_of_requests_list = int(math.ceil(len(data) / MAX_IDS_PER_REQUEST))
+    requests_list = [[] for _ in range(size_of_requests_list)]
+    print(requests_list)
+    return requests_list
+
+
+def merge_dicts_from_apis(trackmania_api_dict, mm_api_dict):
+    for element in mm_api_dict:
+        element['player'] = element.pop('account_id')
+    final_dict = defaultdict(dict)
+    for element in (trackmania_api_dict, mm_api_dict):
+        for e in element:
+            final_dict[e['player']].update(e)
+    return final_dict.values()
 
 
 @bot.command()
 async def get_guild_token(ctx):
     await ctx.send(ctx.message.guild.id)
 
-
-bot.run(config('BOT_SECRET_KEY'))
+keep_alive()
+bot.run(os.environ['BOT_SECRET_KEY'])
