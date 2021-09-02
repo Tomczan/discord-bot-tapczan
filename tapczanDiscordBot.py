@@ -171,11 +171,13 @@ async def nick_and_roles():
                     print("Score:", score)
                     rank = user['rank']
                     print("Rank:", rank)
+                    nickname = api.get_player_nickname(user['account_id'])
+                    print(f'NICKNAME: {nickname}')
                 except:
                     score = 0
                     rank = 101
                 try:
-                    await member.edit(nick=str(user['display_name']) + ' - ' + str(score))
+                    await member.edit(nick=str(nickname) + ' - ' + str(score))
                 except discord.errors.Forbidden:
                     continue
 

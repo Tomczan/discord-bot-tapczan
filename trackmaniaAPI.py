@@ -8,6 +8,8 @@ from decouple import config
 class TmApi:
     ticket = ''
     refresh_ticket = ''
+    ticket_level1 = ''
+    ticket_level2 = ''
 
     # uplay token
     def level0(self):
@@ -58,6 +60,8 @@ class TmApi:
         except:
             return "Couldnt get a response from apis"
         if response_level2:
+            self.ticket_level1 = response_level0['ticket']
+            self.ticket_level2 = response_level1['accessToken']
             self.ticket = response_level2['accessToken']
             self.refresh_ticket = response_level2['refreshToken']
             return response_level2
@@ -66,7 +70,7 @@ class TmApi:
         url = "https://prod.trackmania.core.nadeo.online/v2/authentication/token/refresh"
         headers = {
             'Authorization': 'nadeo_v1 t=' + self.refresh_ticket
-        }   
+        }
         try:
             refresh_ticket = requests.post(url, headers=headers)
             print("Refresh ticket: ", type(refresh_ticket))
@@ -89,7 +93,6 @@ class TmApi:
             return player_info.json()
         except:
             return 'Could not connect with api and get player info.'
-            
 
     def get_players_info(self, request_arg):
         url = "https://matchmaking.trackmania.nadeo.club/api/matchmaking/2/leaderboard/players?" + request_arg
@@ -102,3 +105,36 @@ class TmApi:
             return players_info.json()
         except:
             return 'Could not connect with api and get player info.'
+
+    def get_player_nickname(self, nadeo_id):
+        profileId = self.ubi_id_from_nadeo_id(nadeo_id)
+        nickname = self.get_player_nickname_from_nadeo_id(profileId)
+        return nickname
+
+    def get_player_nickname_from_nadeo_id(self, profileId):
+        conn = http.client.HTTPSConnection("public-ubiservices.ubi.com")
+        url = "/v3/profiles?profileId=" + profileId
+        payload = ''
+        headers = {
+            'Authorization': 'ubi_v1 t=' + self.ticket_level1,
+            'Ubi-AppId': '86263886-327a-4328-ac69-527f0d20a237'
+        }
+        conn.request(
+            "GET", url, payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        data = data.decode("utf-8")
+        response = json.loads(data)
+        return response['profiles'][0]['nameOnPlatform']
+
+    def ubi_id_from_nadeo_id(self, nadeo_id):
+        url = "https://prod.trackmania.core.nadeo.online/webidentities/?accountIdList=" + nadeo_id
+
+        payload = {}
+        headers = {
+            'Authorization': 'nadeo_v1 t=' + self.ticket_level2
+        }
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+        response = response.json()
+        return response[0]['uid']
