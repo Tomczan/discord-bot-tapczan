@@ -283,5 +283,74 @@ def merge_dicts_from_apis(trackmania_api_dict, mm_api_dict):
 async def get_guild_token(ctx):
     await ctx.send(ctx.message.guild.id)
 
+########
+# TEST #
+########
+
+flag_dictionary = {'France': 'fr', 'Germany': 'de', 'United Kingdom': 'gb', 'Austria': 'at', 'Turkey': 'tr', 'Sweden': 'se', 'Netherlands': 'nl', 'Poland': 'pl',
+                   'South Korea': 'kr', 'Indonesia': 'id', 'Finland': 'fi', 'Switzerland': 'ch', 'Denmark': 'dk', 'Canada': 'ca', 'Czechia': 'cz', 'Croatia': 'hr',
+                   'Argentina': 'ar', 'Norway': 'no', 'Belgium': 'be', 'Lithuania': 'lt', 'Latvia': 'kv', 'Ireland': 'ie', 'Mexico': 'mx', 'United States': 'us',
+                   'Sweden': 'se', 'Estonia': 'ee', 'Hungary': 'hu', 'Portugal': 'pt', 'Malaysia': 'my', 'Australia': 'au', 'Russia': 'ru', 'Italy': 'it', 'Spain': 'es',
+                   'Slovakia': 'sk', 'Singapore': 'sg', 'Jamaica': 'jm', 'Romania': 'ro', 'Bulgaria': 'bg', 'Japan': 'jp', 'Bosnia and Herzegovina': 'ba', 'Nepal': 'np',
+                   'Brazil': 'br', 'India': 'in', 'Nicaragua': 'ni', 'North Macedonia': 'mk', 'Israel': 'il', 'New Zealand': 'nz', 'Philippines': 'ph', 'Belarus': 'by',
+                   'Serbia': 'rs'}
+
+flag_dictionary = {key: ':flag_' + value +
+                   ':' for (key, value) in flag_dictionary.items()}
+
+
+def make_ordinal(n):
+    '''
+    Convert an integer into its ordinal representation::
+
+        make_ordinal(0)   => '0th'
+        make_ordinal(3)   => '3rd'
+        make_ordinal(122) => '122nd'
+        make_ordinal(213) => '213th'
+    '''
+    n = int(n)
+    suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
+    if 11 <= (n % 100) <= 13:
+        suffix = 'th'
+    # if n < 10:
+    #     suffix += ' '
+    return str(n) + suffix
+
+
+def ladder_info():
+    url = "https://trackmania.io/api/top/matchmaking/2/0"
+
+    payload = {}
+    headers = {
+        'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36',
+        'From': 'Discord:Tomczan#7446'
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+    return response.json()
+
+
+@bot.command()
+async def make_embed(ctx):
+    ladder = ladder_info()
+    top_1_score = int(ladder['ranks'][0]['score'])
+    embed_test = discord.Embed(title='Leaderboard')
+    for player in ladder['ranks']:
+        embed_test.add_field(name=f'{make_ordinal(player["rank"])}| {country_into_flag(player)} {player["player"]["name"]}',
+                             value=f'MMR: {player["score"]} (-{top_1_score-int(player["score"])})',
+                             inline=False)
+    await ctx.send(embed=embed_test)
+
+
+def country_into_flag(player):
+    if player["player"]["zone"]["parent"]["name"] in flag_dictionary:
+        return flag_dictionary[player["player"]["zone"]["parent"]["name"]]
+    elif player["player"]["zone"]["parent"]["parent"]["name"] in flag_dictionary:
+        return flag_dictionary[player["player"]
+                               ["zone"]["parent"]["parent"]["name"]]
+    elif player["player"]["zone"]["name"] in flag_dictionary:
+        return flag_dictionary[player["player"]["zone"]["name"]]
+
+
 keep_alive()
 bot.run(os.environ['BOT_SECRET_KEY'])
