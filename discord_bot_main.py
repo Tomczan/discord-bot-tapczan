@@ -313,8 +313,8 @@ def make_ordinal(n):
     suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
     if 11 <= (n % 100) <= 13:
         suffix = 'th'
-    if n < 10:
-        suffix += ' '
+    # if n < 10:
+    #     suffix += '  '
     return str(n) + suffix
 
 
@@ -332,18 +332,26 @@ def ladder_info():
 
 
 async def embed():
+    # indexes_dictionary = {1: 1, 2: 4, 3: 7, 4: 10, 5: 13, 6: 16, 7: 19, 8: 22, 9: 25, 10: 2, 11: 5, 12: 8, 13: 11, 14: 14, 15: 17, 16: 20, 17: 23, 18: 3, 19: 6,
+    #                       20: 9, 21: 12, 22: 15, 23: 18, 24: 21, 25: 24}
     ladder = ladder_info()
     top_1_score = int(ladder['ranks'][0]['score'])
-    embed_test = discord.Embed(title='Leaderboard')
+    embed_test = discord.Embed()
+    embed_test.set_author(name="Leaderboard",
+                          icon_url="https://i.imgur.com/bugL1SJ.png")
     for player in ladder['ranks']:
+        print(player['rank'])
+        print('player rank')
         if player['rank'] == 1:
-            embed_test.add_field(name=f'{make_ordinal(player["rank"])}| {country_into_flag(player)} {player["player"]["name"]}',
-                                 value=f'**MMR**: {player["score"]}',
+            embed_test.add_field(name=f'{make_ordinal(player["rank"])} | {country_into_flag(player)} {player["player"]["name"]}',
+                                 value=f'{score_into_rank_emoji(int(player["score"]))} {player["score"]}',
                                  inline=False)
         else:
-            embed_test.add_field(name=f'{make_ordinal(player["rank"])}| {country_into_flag(player)} {player["player"]["name"]}',
-                                 value=f'**MMR**: {player["score"]} (-{top_1_score-int(player["score"])})',
+            embed_test.add_field(name=f'{make_ordinal(player["rank"])} | {country_into_flag(player)} {player["player"]["name"]}',
+                                 value=f'{score_into_rank_emoji(int(player["score"]))} {player["score"]} (-{top_1_score-int(player["score"])})',
                                  inline=False)
+    embed_test.set_footer(text='Made by Tomczan',
+                          icon_url='https://github.com/')
     channel = bot.get_channel(854002990112571422)
     await channel.send(embed=embed_test)
 
@@ -361,6 +369,19 @@ def country_into_flag(player):
                                ["zone"]["parent"]["parent"]["name"]]
     elif player["player"]["zone"]["name"] in flag_dictionary:
         return flag_dictionary[player["player"]["zone"]["name"]]
+
+
+def score_into_rank_emoji(score: int):
+    if score > 5000:
+        return "<:trackmaster:916441361669062677>"
+    elif score > 4000:
+        return '<:m3:916441362130423808>'
+    elif score > 3500:
+        return '<:m2:916441361736167495>'
+    elif score > 3000:
+        return '<:m1:916441362000404541>'
+    # elif score > 2500:
+    #     return challenger3
 
 
 keep_alive()
