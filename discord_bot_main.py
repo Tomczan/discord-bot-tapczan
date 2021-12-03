@@ -23,9 +23,6 @@ intents.members = True
 bot = commands.Bot(command_prefix='!',
                    description=description, intents=intents)
 
-# URLs
-
-url_matchmaking = "https://matchmaking.trackmania.nadeo.club/api/matchmaking/2/leaderboard/players?players[]="
 
 bot.loop_active = True
 
@@ -40,6 +37,7 @@ async def get_token(ctx):
 
 
 @bot.event
+# first event when bot is launched
 async def on_ready():
     print('Logged in as')
     print(bot.user.name)
@@ -49,17 +47,15 @@ async def on_ready():
     await channel.send("""Logged in, starting to work""")
     await manage_nick_and_roles()
 
-# starts infinite loops (eg. manage_nick_and_roles())
-
 
 @bot.command()
+# starts infinite loops (eg. manage_nick_and_roles())
 async def start_loop(ctx):
     bot.loop_active = True
 
-# stops infinite loops (eg. manage_nick_and_roles())
-
 
 @bot.command()
+# stops infinite loops (eg. manage_nick_and_roles())
 async def stop_loop(ctx):
     bot.loop_active = False
 
@@ -225,6 +221,7 @@ async def manage_nick_and_roles():
                         await member.add_roles(guild.get_role(851584115665141780))
                 except:
                     print("Cannot add role")
+        print(f'amount of updated players:{amount_of_updated_players}')
         print("Finished loop, wait 10minutes.")
         await asyncio.sleep(300)
     await channel.send("The command has been stopped.")
