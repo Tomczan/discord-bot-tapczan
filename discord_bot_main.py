@@ -45,6 +45,7 @@ async def on_ready():
     print('------')
     channel = bot.get_channel(854002990112571422)
     await channel.send("""Logged in, starting to work""")
+    await embed()
     await manage_nick_and_roles()
 
 
@@ -312,8 +313,8 @@ def make_ordinal(n):
     suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
     if 11 <= (n % 100) <= 13:
         suffix = 'th'
-    # if n < 10:
-    #     suffix += ' '
+    if n < 10:
+        suffix += ' '
     return str(n) + suffix
 
 
@@ -330,16 +331,26 @@ def ladder_info():
     return response.json()
 
 
-@bot.command()
-async def make_embed(ctx):
+async def embed():
     ladder = ladder_info()
     top_1_score = int(ladder['ranks'][0]['score'])
     embed_test = discord.Embed(title='Leaderboard')
     for player in ladder['ranks']:
-        embed_test.add_field(name=f'{make_ordinal(player["rank"])}| {country_into_flag(player)} {player["player"]["name"]}',
-                             value=f'MMR: {player["score"]} (-{top_1_score-int(player["score"])})',
-                             inline=False)
-    await ctx.send(embed=embed_test)
+        if player['rank'] == 1:
+            embed_test.add_field(name=f'{make_ordinal(player["rank"])}| {country_into_flag(player)} {player["player"]["name"]}',
+                                 value=f'**MMR**: {player["score"]}',
+                                 inline=False)
+        else:
+            embed_test.add_field(name=f'{make_ordinal(player["rank"])}| {country_into_flag(player)} {player["player"]["name"]}',
+                                 value=f'**MMR**: {player["score"]} (-{top_1_score-int(player["score"])})',
+                                 inline=False)
+    channel = bot.get_channel(854002990112571422)
+    await channel.send(embed=embed_test)
+
+
+@bot.command()
+async def make_embed():
+    embed()
 
 
 def country_into_flag(player):
