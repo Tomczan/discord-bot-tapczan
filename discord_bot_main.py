@@ -12,6 +12,7 @@ from decouple import config
 from webserver import keep_alive
 import math
 from collections import defaultdict
+import DiscordUtils
 
 MAX_IDS_PER_REQUEST = 150
 
@@ -332,16 +333,14 @@ def ladder_info():
 
 
 async def embed():
-    # indexes_dictionary = {1: 1, 2: 4, 3: 7, 4: 10, 5: 13, 6: 16, 7: 19, 8: 22, 9: 25, 10: 2, 11: 5, 12: 8, 13: 11, 14: 14, 15: 17, 16: 20, 17: 23, 18: 3, 19: 6,
-    #                       20: 9, 21: 12, 22: 15, 23: 18, 24: 21, 25: 24}
     ladder = ladder_info()
     top_1_score = int(ladder['ranks'][0]['score'])
-    embed_test = discord.Embed()
+    embed_test = discord.Embed(color=0x00d10e)
     embed_test.set_author(name="Leaderboard",
                           icon_url="https://i.imgur.com/bugL1SJ.png")
     for player in ladder['ranks']:
-        print(player['rank'])
-        print('player rank')
+        if player['rank'] == 21:
+            break
         if player['rank'] == 1:
             embed_test.add_field(name=f'{make_ordinal(player["rank"])} | {country_into_flag(player)} {player["player"]["name"]}',
                                  value=f'{score_into_rank_emoji(int(player["score"]))} {player["score"]}',
@@ -350,8 +349,7 @@ async def embed():
             embed_test.add_field(name=f'{make_ordinal(player["rank"])} | {country_into_flag(player)} {player["player"]["name"]}',
                                  value=f'{score_into_rank_emoji(int(player["score"]))} {player["score"]} (-{top_1_score-int(player["score"])})',
                                  inline=False)
-    embed_test.set_footer(text='Made by Tomczan',
-                          icon_url='https://github.com/')
+    embed_test.set_footer(text='Made by Tomczan, using trackmania.io API')
     channel = bot.get_channel(854002990112571422)
     await channel.send(embed=embed_test)
 
@@ -380,8 +378,8 @@ def score_into_rank_emoji(score: int):
         return '<:m2:916441361736167495>'
     elif score > 3000:
         return '<:m1:916441362000404541>'
-    # elif score > 2500:
-    #     return challenger3
+    else:
+        return "**MMR**"
 
 
 keep_alive()
