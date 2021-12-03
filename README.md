@@ -1,1 +1,1 @@
-# discord-bot-trackmania-matchkaming
+# Discord bot for Trackmania matchmaking discord: https://discord.gg/dPsqfwbEYy
