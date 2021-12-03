@@ -35,26 +35,8 @@ OAUTH2_API_URL = os.environ['OAUTH2_API_URL']
 @bot.command()
 async def get_token(ctx):
     get_token = trackmaniaAPI.TmApi()
-    tickets = get_token.get_tickets()
+    tickets = get_token.get_ticket_level_2()
     await ctx.send(tickets)
-
-
-@bot.command()
-async def get_refresh_token(ctx):
-    global level2RefreshToken
-    url = "https://prod.trackmania.core.nadeo.online/v2/authentication/token/refresh"
-    headers = {
-        'Authorization': 'nadeo_v1 t=' + level2RefreshToken
-    }
-    while True:
-        refresh_token = requests.post(url, headers=headers)
-        json_response = refresh_token.json()
-        message = json_response
-        await ctx.send(message)
-        await asyncio.sleep(600)
-        if bool(stop):
-            await ctx.send('Tomek kazał mi przestać pracowac :(')
-            break
 
 
 @bot.event
@@ -63,12 +45,18 @@ async def on_ready():
     print(bot.user.name)
     print(bot.user.id)
     print('------')
-    await nick_and_roles()
+    channel = bot.get_channel(854002990112571422)
+    await channel.send("""Logged in, starting to work""")
+    await manage_nick_and_roles()
+
+# starts infinite loops (eg. manage_nick_and_roles())
 
 
 @bot.command()
 async def start_loop(ctx):
     bot.loop_active = True
+
+# stops infinite loops (eg. manage_nick_and_roles())
 
 
 @bot.command()
@@ -92,32 +80,6 @@ async def get_user(ctx, user_id):
     print(type(member))
 
 
-@bot.command(pass_context=True)
-# This must be exactly the name of the appropriate role
-@commands.has_role("Admin")
-async def addrole(ctx):
-    member = ctx.message.author
-    role = get(member.server.roles, name="Test")
-    await bot.add_roles(member, role)
-
-
-@bot.command()
-async def check_rank(ctx, id):
-    url = url_matchmaking + id
-
-    payload = {}
-    headers = {
-        'Authorization': 'nadeo_v1 t=' + level2Token
-    }
-
-    response = requests.request("GET", url, headers=headers, data=payload)
-    resp = response.json()
-    rank = resp['results'][0]['rank']
-    score = resp['results'][0]['score']
-    context = " - " + str(score)
-    await ctx.send(context)
-
-
 async def remove_old_roles(guild, member, id):
     roles_id_list = [851584115665141780, 843466461547593748, 843466786489499659,
                      843466934623928330, 843466667308089344, 843467019575885824,
@@ -137,47 +99,62 @@ async def remove_old_roles(guild, member, id):
 
 
 @bot.command()
-async def set_nick_and_roles(ctx):
-    await nick_and_roles()
+# command to start manually function manage_nick_and_roles()
+async def start_manage_nick_and_roles(ctx):
+    await manage_nick_and_roles()
 
 
-async def nick_and_roles():
+async def manage_nick_and_roles():
     guild_id = int(os.environ['GUILD_ID'])
     guild = bot.get_guild(guild_id)
-
-    api = trackmaniaAPI.TmApi()
-    api.get_tickets()
-
     channel = bot.get_channel(854002990112571422)
-    await channel.send("""Logged in, starting to work""")
+
+    # create object to work with TrackmaniaAPI
+    api = trackmaniaAPI.TmApi()
+    # get_ticket_levet_2 return level_2 ticket
+    api.get_ticket_level_2()
 
     while bot.loop_active:
-        if not(api.ticket):
-            api.get_tickets()
-        else:
-            api.get_new_refresh_ticket()
-
+        amount_of_updated_players = 0
+        # if not(api.ticket):
+        api.get_ticket_level_2()
+        # else:
+        #    api.get_new_refresh_ticket()
+        # dict from https://github.com/Tomczan/tm-discord-oauth2 api
         mm_api_dict = get_users_from_oauth2_api()
+        # decode json
         mm_api_dict = json.loads(mm_api_dict.text)
         trackmania_api_dict = do_requests(mm_api_dict, api)
         final_dict = merge_dicts_from_apis(trackmania_api_dict, mm_api_dict)
-
+        print(final_dict)
+        print('Wielkosc:', len(final_dict))
         for user in final_dict:
             member = guild.get_member(user['linked_discord'])
+            print(member)
+
             if member:
                 try:
-                    print(user['account_id'])
+                    print(user['player'])
                     score = user['score']
                     print("Score:", score)
                     rank = user['rank']
                     print("Rank:", rank)
-                    nickname = api.get_player_nickname(user['account_id'])
-                    print(f'NICKNAME: {nickname}')
+                    print("Udalo sie")
+                    print(user['linked_discord'])
+                    print(amount_of_updated_players)
+                    amount_of_updated_players += 1
                 except:
                     score = 0
                     rank = 101
                 try:
-                    await member.edit(nick=str(nickname) + ' - ' + str(score))
+                    nickname = str(api.get_player_nickname(
+                        user['player'])) + ' - ' + str(score)
+                    print("nickname " + ' ' + nickname)
+                except:
+                    # nickname = str(user['display_name']) + ' - ' + str(score)
+                    print("api ubisoft error")
+                try:
+                    await member.edit(nick=nickname)
                 except discord.errors.Forbidden:
                     continue
 
@@ -248,6 +225,7 @@ async def nick_and_roles():
                         await member.add_roles(guild.get_role(851584115665141780))
                 except:
                     print("Cannot add role")
+        print("Finished loop, wait 10minutes.")
         await asyncio.sleep(300)
     await channel.send("The command has been stopped.")
 

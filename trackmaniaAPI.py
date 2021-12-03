@@ -52,7 +52,7 @@ class TmApi:
         )
         return nadeo_services.json()
 
-    def get_tickets(self):
+    def get_ticket_level_2(self):
         try:
             response_level0 = self.level0()
             response_level1 = self.level1(response_level0['ticket'])

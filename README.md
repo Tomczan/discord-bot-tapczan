@@ -1,1 +1,1 @@
-# discord-bot-tapczan
+# discord-bot-trackmania-matchkaming
