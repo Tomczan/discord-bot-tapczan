@@ -46,7 +46,6 @@ async def on_ready():
     print('------')
     channel = bot.get_channel(854002990112571422)
     await channel.send("""Logged in, starting to work""")
-    await embed()
     await manage_nick_and_roles()
 
 
@@ -285,9 +284,9 @@ def merge_dicts_from_apis(trackmania_api_dict, mm_api_dict):
 async def get_guild_token(ctx):
     await ctx.send(ctx.message.guild.id)
 
-########
-# TEST #
-########
+###############################################
+############## LEADERBOARD EMBED ##############
+###############################################
 
 flag_dictionary = {'France': 'fr', 'Germany': 'de', 'United Kingdom': 'gb', 'Austria': 'at', 'Turkey': 'tr', 'Sweden': 'se', 'Netherlands': 'nl', 'Poland': 'pl',
                    'South Korea': 'kr', 'Indonesia': 'id', 'Finland': 'fi', 'Switzerland': 'ch', 'Denmark': 'dk', 'Canada': 'ca', 'Czechia': 'cz', 'Croatia': 'hr',
@@ -343,36 +342,43 @@ def top20_leaderboard(ladder):
             i += 1
         if player['rank'] == 1:
             test = f'**{make_ordinal(player["rank"])} | {country_into_flag(player)} {player["player"]["name"]}** \n{score_into_rank_emoji(int(player["score"]))} {player["score"]}\n'
-            embed_value_string[i] += test
+            embed_value_string[i] += test.center(50, " ")
         else:
             test = f'**{make_ordinal(player["rank"])} | {country_into_flag(player)} {player["player"]["name"]}** \n {score_into_rank_emoji(int(player["score"]))} {player["score"]} (-{top_1_score-int(player["score"])})\n'
-            embed_value_string[i] += test
+            embed_value_string[i] += test.center(50, " ")
     return embed_value_string
 
 
 async def embed():
+    # create embed
+    embed_leaderboard = discord.Embed(color=0x00d10e)
+    embed_leaderboard.set_author(name="Leaderboard",
+                                 icon_url="https://i.imgur.com/bugL1SJ.png")
+    fill_embed_field(embed_leaderboard)
+    embed_leaderboard.set_footer(
+        text='Made by Tomczan, using trackmania.io API')
+    channel = bot.get_channel(854002990112571422)
+    await channel.send(embed=embed_leaderboard)
+    while True:
+        await asyncio.sleep(10)
+        embed_leaderboard.clear_fields()
+        # fill_embed_field(embed_leaderboard)
+        await channel.send("""bylem tutaj w update embed""")
+
+
+def fill_embed_field(embed_leaderboard):
     ladder = ladder_info()
     top20_list = top20_leaderboard(ladder)
-    top_1_score = int(ladder['ranks'][0]['score'])
-    embed_test = discord.Embed(color=0x00d10e)
-    embed_test.set_author(name="Leaderboard",
-                          icon_url="https://i.imgur.com/bugL1SJ.png")
-    embed_test.add_field(name='◥◤ top 1 to 10 ◥◤',
-                         value=f'{top20_list[0]}', inline=True)
-    embed_test.add_field(name='◥◤ top 11 to 20 ◥◤',
-                         value=f'{top20_list[1]}', inline=True)
-    embed_test.set_footer(text='Made by Tomczan, using trackmania.io API')
-    channel = bot.get_channel(854002990112571422)
-    await channel.send(embed=embed_test)
+    # top_1_score = int(ladder['ranks'][0]['score'])
+    embed_leaderboard.add_field(name='◥◤ top 1 to 10 ◥◤',
+                                value=f'{top20_list[0]}', inline=True)
+    embed_leaderboard.add_field(name='◥◤ top 11 to 20 ◥◤',
+                                value=f'{top20_list[1]}', inline=True)
 
 
-def leaderboard_string_per_10_players(ladder):
-    pass
-
-
-@bot.command()
-async def make_embed():
-    embed()
+# @bot.command()
+# async def make_embed(ctx):
+#     embed()
 
 
 def country_into_flag(player):
