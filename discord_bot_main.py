@@ -332,26 +332,42 @@ def ladder_info():
     return response.json()
 
 
+def top20_leaderboard(ladder):
+    top_1_score = ladder['ranks'][0]['score']
+    i = 0
+    embed_value_string = ['', '']
+    for player in ladder['ranks']:
+        if player['rank'] == 21:
+            break
+        if player['rank'] == 11:
+            i += 1
+        if player['rank'] == 1:
+            test = f'**{make_ordinal(player["rank"])} | {country_into_flag(player)} {player["player"]["name"]}** \n{score_into_rank_emoji(int(player["score"]))} {player["score"]}\n'
+            embed_value_string[i] += test
+        else:
+            test = f'**{make_ordinal(player["rank"])} | {country_into_flag(player)} {player["player"]["name"]}** \n {score_into_rank_emoji(int(player["score"]))} {player["score"]} (-{top_1_score-int(player["score"])})\n'
+            embed_value_string[i] += test
+    return embed_value_string
+
+
 async def embed():
     ladder = ladder_info()
+    top20_list = top20_leaderboard(ladder)
     top_1_score = int(ladder['ranks'][0]['score'])
     embed_test = discord.Embed(color=0x00d10e)
     embed_test.set_author(name="Leaderboard",
                           icon_url="https://i.imgur.com/bugL1SJ.png")
-    for player in ladder['ranks']:
-        if player['rank'] == 21:
-            break
-        if player['rank'] == 1:
-            embed_test.add_field(name=f'{make_ordinal(player["rank"])} | {country_into_flag(player)} {player["player"]["name"]}',
-                                 value=f'{score_into_rank_emoji(int(player["score"]))} {player["score"]}',
-                                 inline=False)
-        else:
-            embed_test.add_field(name=f'{make_ordinal(player["rank"])} | {country_into_flag(player)} {player["player"]["name"]}',
-                                 value=f'{score_into_rank_emoji(int(player["score"]))} {player["score"]} (-{top_1_score-int(player["score"])})',
-                                 inline=False)
+    embed_test.add_field(name='◥◤ top 1 to 10 ◥◤',
+                         value=f'{top20_list[0]}', inline=True)
+    embed_test.add_field(name='◥◤ top 11 to 20 ◥◤',
+                         value=f'{top20_list[1]}', inline=True)
     embed_test.set_footer(text='Made by Tomczan, using trackmania.io API')
     channel = bot.get_channel(854002990112571422)
     await channel.send(embed=embed_test)
+
+
+def leaderboard_string_per_10_players(ladder):
+    pass
 
 
 @bot.command()
@@ -370,11 +386,11 @@ def country_into_flag(player):
 
 
 def score_into_rank_emoji(score: int):
-    if score > 5000:
+    if score > 4000:
         return "<:trackmaster:916441361669062677>"
-    elif score > 4000:
+    elif score > 3600:
         return '<:m3:916441362130423808>'
-    elif score > 3500:
+    elif score > 3300:
         return '<:m2:916441361736167495>'
     elif score > 3000:
         return '<:m1:916441362000404541>'
