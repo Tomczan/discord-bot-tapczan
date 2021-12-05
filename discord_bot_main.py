@@ -359,7 +359,7 @@ def top20_leaderboard(ladder):
 
 async def embed():
     embed_leaderboard = create_leaderboard_embed()
-    channel = bot.get_channel(854002990112571422)
+    channel = bot.get_channel(915965945279827978)
     msg = await channel.send(embed=embed_leaderboard)
     while True:
         await asyncio.sleep(3600)
@@ -385,7 +385,7 @@ def create_leaderboard_embed():
     embed_leaderboard.add_field(name='◥◤ top 11 to 20 ◥◤',
                                 value=f'{top20_list[1]}', inline=True)
     embed_leaderboard.set_footer(
-        text='Made by Tomczan | data from trackmania.io API | ' + current_time + ' CET')
+        text='Made by Tomczan | data from trackmania.io API | ' + current_time + ' UTC')
     return embed_leaderboard
 
 
