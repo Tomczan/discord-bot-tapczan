@@ -47,6 +47,7 @@ async def on_ready():
     print(bot.user.id)
     print('------')
     channel = bot.get_channel(854002990112571422)
+    await channel.send("""Logged in""")
     loop = asyncio.get_event_loop()
     tasks = [
         loop.create_task(manage_nick_and_roles()),
@@ -54,7 +55,6 @@ async def on_ready():
     ]
     loop.run_until_complete(asyncio.wait(tasks))
     loop.close()
-    await channel.send("""Logged in, starting to work""")
 
 
 @bot.command()
@@ -360,7 +360,8 @@ def top20_leaderboard(ladder):
 async def embed():
     embed_leaderboard = create_leaderboard_embed()
     channel = bot.get_channel(915965945279827978)
-    msg = await channel.send(embed=embed_leaderboard)
+    msg = await channel.fetch_message(id=917084670498332702)
+    await msg.edit(embed=embed_leaderboard)
     while True:
         await asyncio.sleep(3600)
         embed_leaderboard.clear_fields()
