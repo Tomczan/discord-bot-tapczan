@@ -1,3 +1,4 @@
+from asyncio import tasks
 import discord
 from discord.ext import commands
 import random
@@ -13,6 +14,7 @@ from webserver import keep_alive
 import math
 from collections import defaultdict
 import DiscordUtils
+from datetime import datetime
 
 MAX_IDS_PER_REQUEST = 150
 
@@ -45,8 +47,14 @@ async def on_ready():
     print(bot.user.id)
     print('------')
     channel = bot.get_channel(854002990112571422)
+    loop = asyncio.get_event_loop()
+    tasks = [
+        loop.create_task(manage_nick_and_roles()),
+        loop.create_task(embed())
+    ]
+    loop.run_until_complete(asyncio.wait(tasks))
+    loop.close()
     await channel.send("""Logged in, starting to work""")
-    await manage_nick_and_roles()
 
 
 @bot.command()
@@ -350,23 +358,25 @@ def top20_leaderboard(ladder):
 
 
 async def embed():
-    # create embed
-    embed_leaderboard = discord.Embed(color=0x00d10e)
-    embed_leaderboard.set_author(name="Leaderboard",
-                                 icon_url="https://i.imgur.com/bugL1SJ.png")
-    fill_embed_field(embed_leaderboard)
-    embed_leaderboard.set_footer(
-        text='Made by Tomczan, using trackmania.io API')
+    embed_leaderboard = create_leaderboard_embed()
     channel = bot.get_channel(854002990112571422)
-    await channel.send(embed=embed_leaderboard)
+    msg = await channel.send(embed=embed_leaderboard)
     while True:
-        await asyncio.sleep(10)
+        await asyncio.sleep(3600)
         embed_leaderboard.clear_fields()
-        # fill_embed_field(embed_leaderboard)
+        embed_leaderboard = create_leaderboard_embed()
+        await msg.edit(embed=embed_leaderboard)
+        # fill_embed_field(embed_leaderboard, extra_value="update test")
         await channel.send("""bylem tutaj w update embed""")
 
 
-def fill_embed_field(embed_leaderboard):
+def create_leaderboard_embed():
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    # create leaderboard embed
+    embed_leaderboard = discord.Embed(color=0x00d10e)
+    embed_leaderboard.set_author(name="Leaderboard",
+                                 icon_url="https://i.imgur.com/bugL1SJ.png")
     ladder = ladder_info()
     top20_list = top20_leaderboard(ladder)
     # top_1_score = int(ladder['ranks'][0]['score'])
@@ -374,6 +384,9 @@ def fill_embed_field(embed_leaderboard):
                                 value=f'{top20_list[0]}', inline=True)
     embed_leaderboard.add_field(name='◥◤ top 11 to 20 ◥◤',
                                 value=f'{top20_list[1]}', inline=True)
+    embed_leaderboard.set_footer(
+        text='Made by Tomczan | data from trackmania.io API | ' + current_time + ' CET')
+    return embed_leaderboard
 
 
 # @bot.command()
